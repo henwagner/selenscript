@@ -3,7 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException
 from datetime import datetime
 import time
 
@@ -15,40 +15,31 @@ def check_robots_txt():
     return True
 
 def accept_terms(driver):
-    nonclickables = ['script', 'iframe', 'fieldset', 'embed', 'frame', 'form', 'frameset', 'noframe', 'br', 'wbr', 'link']
-    driver.switch_to.default_content()
-    for element in driver.find_elements_by_xpath('//*[contains(text(), "I agree")]'):
-        log(element.tag_name)
-        if element.tag_name not in nonclickables and element.is_enabled() and element.is_displayed():
-            try:
-                element.click()
-                tostring = element.get_attribute('outerHTML')
-                if len(tostring)>10:
-                    tostring = tostring[:10] + "..."
-                log("clicked: " + tostring)
-            except Exception as e:
-                log(str(e))
+    ariatext = "Agree to the use of cookies and other data for the purposes described"
     
-    iframes = driver.find_elements_by_tag_name("iframe")
-    for frm in iframes:
-        driver.switch_to.frame(frm)
-        for element in driver.find_elements_by_xpath('//*[contains(text(), "I agree")]'):
+    # find the button
+    driver.switch_to.default_content()
+    agreebutton = None
+    try:
+        agreebutton = driver.find_element_by_xpath("//*[@aria-label='" + ariatext + "']")
+    except NoSuchElementException as outerex:
+        log(str(outerex))
+        iframes = driver.find_elements_by_tag_name("iframe")
+        for frm in iframes:
             try:
-                log(element.tag_name)
-                if element.tag_name not in nonclickables and element.is_enabled() and element.is_displayed():
-                    try:
-                        # to string
-                        tostring = element.get_attribute('outerHTML')
-                        if len(tostring)>10:
-                            tostring = tostring[:10] + "..."
-                        #log and click
-                        log("clicking: " + tostring)
-                        element.click()
-                        log("clicked: " + tostring)
-                    except Exception as e:
-                        log(str(e))
-            except (StaleElementReferenceException, NoSuchElementException) as ex: # in case the DOM is changeing, for example from an earlier click
-                log(str(ex))
+                driver.switch_to.frame(frm)
+                agreebutton = driver.find_element_by_xpath("//*[@aria-label='" + ariatext + "']")
+                break
+            except NoSuchElementException as innerex:
+                log(str(innerex))
+    
+    # try clicking it
+    try:
+        if agreebutton.is_enabled() and agreebutton.is_displayed():
+            agreebutton.click()
+    except (StaleElementReferenceException, NoSuchElementException) as e:
+        log(str(e))
+
     return
 
 def search_for_epping(driver):
@@ -67,9 +58,9 @@ def pan_and_zoom_in(driver):
 
     mapcontainer = driver.find_element_by_xpath("//*[@aria-label='Map']")
     panactions = [(Keys.UP, "up"), (Keys.UP, "up"), (Keys.RIGHT, "right"), (Keys.RIGHT, "right"), (Keys.UP, "up")]
-    for i in panactions:
-        log(str(i))
-        mapcontainer.send_keys(i)
+    for key,name in panactions:
+        log(name)
+        mapcontainer.send_keys(key)
         time.sleep(0.2)
 
     return
@@ -79,7 +70,9 @@ def switch_to_aerial(driver):
     basemapswitcher.click()
     return
 
-def click_on_map():
+def click_on_map(driver):
+    size = driver.get_window_size()
+
     return
 
 def measure_area():
@@ -97,7 +90,7 @@ def main():
         driver = webdriver.Firefox(executable_path='./geckodriver', firefox_profile=profile)
 
         # window size
-        driver.set_window_size(700,500)
+        driver.set_window_size(800,600)
 
         # launch google maps
         time.sleep(2)
