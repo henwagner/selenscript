@@ -5,6 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
 from datetime import datetime
+import time
 
 def log(message):
     print(datetime.now().isoformat() + "\t" + message)
@@ -13,10 +14,10 @@ def log(message):
 def check_robots_txt():
     return True
 
-def accept_terms(driveratroot):
+def accept_terms(driver):
     nonclickables = ['script', 'iframe', 'fieldset', 'embed', 'frame', 'form', 'frameset', 'noframe', 'br', 'wbr', 'link']
     driver.switch_to.default_content()
-    for element in driveratroot.find_elements_by_xpath('//*[contains(text(), "I agree")]'):
+    for element in driver.find_elements_by_xpath('//*[contains(text(), "I agree")]'):
         log(element.tag_name)
         if element.tag_name not in nonclickables and element.is_enabled() and element.is_displayed():
             try:
@@ -28,10 +29,10 @@ def accept_terms(driveratroot):
             except Exception as e:
                 log(str(e))
     
-    iframes = driveratroot.find_elements_by_tag_name("iframe")
+    iframes = driver.find_elements_by_tag_name("iframe")
     for frm in iframes:
-        driveratroot.switch_to.frame(frm)
-        for element in driveratroot.find_elements_by_xpath('//*[contains(text(), "I agree")]'):
+        driver.switch_to.frame(frm)
+        for element in driver.find_elements_by_xpath('//*[contains(text(), "I agree")]'):
             try:
                 log(element.tag_name)
                 if element.tag_name not in nonclickables and element.is_enabled() and element.is_displayed():
@@ -52,15 +53,30 @@ def accept_terms(driveratroot):
 
 def search_for_epping(driver):
     driver.switch_to.default_content()
-    serachbox = driver.find_element_by_id("searchboxinput")
+    serachbox = driver.find_element_by_xpath("//*[@aria-label='Search Google Maps']")
     serachbox.send_keys("Epping Forest")
-    serachbox.send_keys(Key.ENTER)
+    serachbox.send_keys(Keys.ENTER)
     return
 
-def pan_and_zoom_in():
+def pan_and_zoom_in(driver):
+    zoominbutton = driver.find_element_by_xpath("//*[@aria-label='Zoom in']")
+    for i in range(5):
+        log("zoom in")
+        zoominbutton.click()
+        time.sleep(0.2)
+
+    mapcontainer = driver.find_element_by_xpath("//*[@aria-label='Map']")
+    panactions = [(Keys.UP, "up"), (Keys.UP, "up"), (Keys.RIGHT, "right"), (Keys.RIGHT, "right"), (Keys.UP, "up")]
+    for i in panactions:
+        log(str(i))
+        mapcontainer.send_keys(i)
+        time.sleep(0.2)
+
     return
 
-def switch_to_aerial():
+def switch_to_aerial(driver):
+    basemapswitcher = driver.find_element_by_xpath("//*[@aria-label='widget-minimap-caption']")
+    basemapswitcher.click()
     return
 
 def click_on_map():
@@ -84,21 +100,28 @@ def main():
         driver.set_window_size(700,500)
 
         # launch google maps
+        time.sleep(2)
         driver.get('https://maps.google.co.uk')
-        driver.implicitly_wait(2)
         driver.get_screenshot_as_file('./step0-maps.png')
 
         # accept terms
+        time.sleep(2)
         accept_terms(driver)
         driver.get_screenshot_as_file('./step1-t&c.png')
 
         # search for epping
+        time.sleep(2)
         search_for_epping(driver)
         driver.get_screenshot_as_file('./step2-search.png')
 
         # pan the map
-        #driver.get_screenshot_as_file('./step3-pan.png')
+        time.sleep(2)
+        pan_and_zoom_in(driver)
+        driver.get_screenshot_as_file('./step3-panzoomin.png')
 
+        # 
+
+        time.sleep(10)
     
         driver.quit()
     
