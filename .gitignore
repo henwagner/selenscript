@@ -1,0 +1,5 @@
+env/
+.vscode/
+geckodriver
+geckodriver.log
+*.png

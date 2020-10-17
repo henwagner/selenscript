@@ -3,6 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
 from datetime import datetime
 
 def log(message):
@@ -14,6 +15,7 @@ def check_robots_txt():
 
 def accept_terms(driveratroot):
     nonclickables = ['script', 'iframe', 'fieldset', 'embed', 'frame', 'form', 'frameset', 'noframe', 'br', 'wbr', 'link']
+    driver.switch_to.default_content()
     for element in driveratroot.find_elements_by_xpath('//*[contains(text(), "I agree")]'):
         log(element.tag_name)
         if element.tag_name not in nonclickables and element.is_enabled() and element.is_displayed():
@@ -24,31 +26,47 @@ def accept_terms(driveratroot):
                     tostring = tostring[:10] + "..."
                 log("clicked: " + tostring)
             except Exception as e:
-                log(e)
+                log(str(e))
     
     iframes = driveratroot.find_elements_by_tag_name("iframe")
     for frm in iframes:
         driveratroot.switch_to.frame(frm)
         for element in driveratroot.find_elements_by_xpath('//*[contains(text(), "I agree")]'):
-            log(element.tag_name)
-            if element.tag_name not in nonclickables and element.is_enabled() and element.is_displayed():
-                try:
-                    # to string
-                    tostring = element.get_attribute('outerHTML')
-                    if len(tostring)>10:
-                        tostring = tostring[:10] + "..."
-                    #log and click
-                    log("clicking: " + tostring)
-                    element.click()
-                    log("clicked: " + tostring)
-                except Exception as e:
-                    log(e)
+            try:
+                log(element.tag_name)
+                if element.tag_name not in nonclickables and element.is_enabled() and element.is_displayed():
+                    try:
+                        # to string
+                        tostring = element.get_attribute('outerHTML')
+                        if len(tostring)>10:
+                            tostring = tostring[:10] + "..."
+                        #log and click
+                        log("clicking: " + tostring)
+                        element.click()
+                        log("clicked: " + tostring)
+                    except Exception as e:
+                        log(str(e))
+            except (StaleElementReferenceException, NoSuchElementException) as ex: # in case the DOM is changeing, for example from an earlier click
+                log(str(ex))
     return
 
-def search_for_epping(driveratroot):
-    serachbox = driveratroot.find_element(By.ID("searchboxinput"))
+def search_for_epping(driver):
+    driver.switch_to.default_content()
+    serachbox = driver.find_element_by_id("searchboxinput")
     serachbox.send_keys("Epping Forest")
     serachbox.send_keys(Key.ENTER)
+    return
+
+def pan_and_zoom_in():
+    return
+
+def switch_to_aerial():
+    return
+
+def click_on_map():
+    return
+
+def measure_area():
     return
 
 def main():
@@ -75,7 +93,7 @@ def main():
         driver.get_screenshot_as_file('./step1-t&c.png')
 
         # search for epping
-        search_for(driver)
+        search_for_epping(driver)
         driver.get_screenshot_as_file('./step2-search.png')
 
         # pan the map
