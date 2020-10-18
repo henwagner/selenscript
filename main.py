@@ -3,7 +3,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
 from datetime import datetime
 import time
 
@@ -49,7 +50,17 @@ def search_for_epping(driver):
     serachbox.send_keys(Keys.ENTER)
     return
 
-def pan_and_zoom_in(driver):
+def pan_and_zoom_in_mouse(driver):
+    driver.switch_to.default_content()
+    # pan
+
+    mapcontainer = driver.find_element_by_xpath("//*[@aria-label='Map']")
+    #zoom
+
+    return
+
+def pan_and_zoom_in_kayboard(driver):
+    driver.switch_to.default_content()
     zoominbutton = driver.find_element_by_xpath("//*[@aria-label='Zoom in']")
     for i in range(5):
         log("zoom in")
@@ -66,12 +77,20 @@ def pan_and_zoom_in(driver):
     return
 
 def switch_to_aerial(driver):
-    basemapswitcher = driver.find_element_by_xpath("//*[@aria-label='widget-minimap-caption']")
+    driver.switch_to.default_content()
+    basemapswitcher = driver.find_element_by_xpath("//*[@aria-labelledby='widget-minimap-caption']") # there is a separate label hence labelledby
     basemapswitcher.click()
+    time.sleep(2) # allowing extra time for the new tiles to download
     return
 
 def click_on_map(driver):
+    driver.switch_to.default_content()
     size = driver.get_window_size()
+    centreheight = size['height'] / 2
+    centrewidth = size['width'] / 2
+    body, = driver.find_elements_by_tag_name('body') # unpacking to ensure a single body tag
+    action = ActionChains(driver)
+    action.move_to_element_with_offset(body, centrewidth, centreheight).click().perform()
 
     return
 
@@ -112,7 +131,15 @@ def main():
         pan_and_zoom_in(driver)
         driver.get_screenshot_as_file('./step3-panzoomin.png')
 
-        # 
+        # switch to aerial
+        time.sleep(2)
+        switch_to_aerial(driver)
+        driver.get_screenshot_as_file('./step4-aerial.png')
+
+        # click on the map
+        time.sleep(2)
+        click_on_map(driver)
+        driver.get_screenshot_as_file('./step4-mapclick.png')
 
         time.sleep(10)
     
