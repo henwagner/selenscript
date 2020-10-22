@@ -50,16 +50,7 @@ def search_for_epping(driver):
     serachbox.send_keys(Keys.ENTER)
     return
 
-def pan_and_zoom_in_mouse(driver):
-    driver.switch_to.default_content()
-    # pan
-
-    mapcontainer = driver.find_element_by_xpath("//*[@aria-label='Map']")
-    #zoom
-
-    return
-
-def pan_and_zoom_in_kayboard(driver):
+def pan_and_zoom_in(driver):
     driver.switch_to.default_content()
     zoominbutton = driver.find_element_by_xpath("//*[@aria-label='Zoom in']")
     for i in range(5):
@@ -72,6 +63,11 @@ def pan_and_zoom_in_kayboard(driver):
     for key,name in panactions:
         log(name)
         mapcontainer.send_keys(key)
+        time.sleep(0.2)
+
+    for i in range(3):
+        log("zoom in")
+        zoominbutton.click()
         time.sleep(0.2)
 
     return
@@ -94,7 +90,31 @@ def click_on_map(driver):
 
     return
 
-def measure_area():
+def measure_area(driver):
+    driver.switch_to.default_content()
+    size = driver.get_window_size()
+    centreheight = size['height'] / 2
+    centrewidth = size['width'] / 2
+    body, = driver.find_elements_by_tag_name('body') # unpacking to ensure a single body tag
+
+    areacoordsoffests = [(-10,0), (-20, 0), (-20, -50), (-10, 50), (-10, 20), (-10, 0)]
+    areacoords = [(centrewidth-a[0], centreheight - a[1]) for a in areacoordsoffests]
+
+    action = ActionChains(driver)
+    action.move_to_element_with_offset(body, areacoords[0][0], areacoords[0][1]).context_click().perform()
+    WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="action-menu"]//*[contains(text(), "Measure distance")]/ancestor::li'))).click()
+    time.sleep(0.5)
+    #distancebutton, = driver.find_elements_by_xpath('//*[@id="action-menu"]//*[contains(text(), "Measure distance")]/ancestor::li') # expecting a single element
+
+
+    for coords in areacoords[1:]:
+        action.move_to_element_with_offset(body, coords[0], coords[1]).click().perform()
+        time.sleep(0.2)
+
+    #contextmenu = driver.get_element_by_id("action-menu")
+    #distancebutton = contextmenu.find_elements_by_xpath('//*[@id="action-menu"]/child::*[contains(text(), "Measure distance")]')
+    distancebutton.click()
+    
     return
 
 def main():
@@ -109,7 +129,7 @@ def main():
         driver = webdriver.Firefox(executable_path='./geckodriver', firefox_profile=profile)
 
         # window size
-        driver.set_window_size(800,600)
+        driver.set_window_size(1024,768)
 
         # launch google maps
         time.sleep(2)
@@ -128,6 +148,7 @@ def main():
 
         # pan the map
         time.sleep(2)
+        #pan_and_zoom_in_kayboard(driver)
         pan_and_zoom_in(driver)
         driver.get_screenshot_as_file('./step3-panzoomin.png')
 
@@ -140,6 +161,11 @@ def main():
         time.sleep(2)
         click_on_map(driver)
         driver.get_screenshot_as_file('./step4-mapclick.png')
+
+        # click on the map
+        time.sleep(2)
+        measure_area(driver)
+        driver.get_screenshot_as_file('./step5-mapclick.png')
 
         time.sleep(10)
     
