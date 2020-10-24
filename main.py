@@ -97,23 +97,26 @@ def measure_area(driver):
     centrewidth = size['width'] / 2
     body, = driver.find_elements_by_tag_name('body') # unpacking to ensure a single body tag
 
-    areacoordsoffests = [(-10,0), (-20, 0), (-20, -50), (-10, 50), (-10, 20), (-10, 0)]
-    areacoords = [(centrewidth-a[0], centreheight - a[1]) for a in areacoordsoffests]
+    areacoordsoffests = [(10,50), (20, 50), (20, 100), (10, 100), (10, 70), (10, 50)]
+    #areacoordsoffests = [(100,100), (200, 200), (300, 300)]
+    areacoords = [(centrewidth + a[0], centreheight + a[1]) for a in areacoordsoffests]
 
     action = ActionChains(driver)
     action.move_to_element_with_offset(body, areacoords[0][0], areacoords[0][1]).context_click().perform()
-    WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="action-menu"]//*[contains(text(), "Measure distance")]/ancestor::li'))).click()
     time.sleep(0.5)
+    WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="action-menu"]//*[contains(text(), "Measure distance")]/ancestor::li'))).click()
+    time.sleep(5)
     #distancebutton, = driver.find_elements_by_xpath('//*[@id="action-menu"]//*[contains(text(), "Measure distance")]/ancestor::li') # expecting a single element
 
 
     for coords in areacoords[1:]:
+        action = ActionChains(driver)
         action.move_to_element_with_offset(body, coords[0], coords[1]).click().perform()
-        time.sleep(0.2)
+        time.sleep(2)
 
     #contextmenu = driver.get_element_by_id("action-menu")
     #distancebutton = contextmenu.find_elements_by_xpath('//*[@id="action-menu"]/child::*[contains(text(), "Measure distance")]')
-    distancebutton.click()
+    #distancebutton.click()
     
     return
 
